@@ -1,7 +1,8 @@
-import { Tooltip } from 'antd';
-import React, { useEffect, useMemo, useState } from 'react';
+import {Tooltip} from 'antd';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {
+  AddressType,
   Atomical,
   DecodedPsbt,
   Inscription,
@@ -11,27 +12,27 @@ import {
   ToSignInput,
   TxType
 } from '@/shared/types';
-import { Button, Card, Column, Content, Footer, Header, Icon, Layout, Row, Text } from '@/ui/components';
-import { useTools } from '@/ui/components/ActionComponent';
-import { AddressText } from '@/ui/components/AddressText';
+import {Button, Card, Column, Content, Footer, Header, Icon, Layout, Row, Text} from '@/ui/components';
+import {useTools} from '@/ui/components/ActionComponent';
+import {AddressText} from '@/ui/components/AddressText';
 import Arc20PreviewCard from '@/ui/components/Arc20PreviewCard';
 import AssetTag from '@/ui/components/AssetTag';
 import AtomicalsNFTPreview from '@/ui/components/AtomicalsNFTPreview';
 import BRC20Preview from '@/ui/components/BRC20Preview';
 import InscriptionPreview from '@/ui/components/InscriptionPreview';
 import RunesPreviewCard from '@/ui/components/RunesPreviewCard';
-import { SignPsbtWithRisksPopover } from '@/ui/components/SignPsbtWithRisksPopover';
+import {SignPsbtWithRisksPopover} from '@/ui/components/SignPsbtWithRisksPopover';
 import WebsiteBar from '@/ui/components/WebsiteBar';
-import { useAccountAddress, useCurrentAccount } from '@/ui/state/accounts/hooks';
+import {useAccountAddress, useCurrentAccount} from '@/ui/state/accounts/hooks';
 import {
   usePrepareSendAtomicalsNFTCallback,
   usePrepareSendBTCCallback,
   usePrepareSendOrdinalsInscriptionCallback
 } from '@/ui/state/transactions/hooks';
-import { colors } from '@/ui/theme/colors';
-import { fontSizes } from '@/ui/theme/font';
-import { copyToClipboard, satoshisToAmount, shortAddress, useApproval, useWallet } from '@/ui/utils';
-import { LoadingOutlined } from '@ant-design/icons';
+import {colors} from '@/ui/theme/colors';
+import {fontSizes} from '@/ui/theme/font';
+import {copyToClipboard, satoshisToAmount, shortAddress, useApproval, useWallet} from '@/ui/utils';
+import {LoadingOutlined} from '@ant-design/icons';
 
 interface Props {
   header?: React.ReactNode;
@@ -533,16 +534,24 @@ export default function SignPsbt({
     }
 
     const decodedPsbt = await wallet.decodePsbt(psbtHex, session?.origin || '');
-
+    // get current address type:
+    const currentKeyring = await wallet.getCurrentKeyring();
     let toSignInputs: ToSignInput[] = [];
     if (type === TxType.SEND_BITCOIN || type === TxType.SEND_ORDINALS_INSCRIPTION) {
       toSignInputs = decodedPsbt.inputInfos.map((v, index) => ({
         index,
-        publicKey: currentAccount.pubkey
+        publicKey: currentAccount.pubkey,
+        rawTaprootPubkey: currentKeyring.addressType === Addresstype.RAW_P2TR
       }));
     } else {
       try {
         toSignInputs = await wallet.formatOptionsToSignInputs(psbtHex, options);
+        if (currentKeyring.addressType === AddressType.RAW_P2TR) {
+          toSignInputs = toSignInputs.map((v) => ({
+            ...v,
+            rawTaprootPubkey: true
+          }));
+        }
       } catch (e) {
         txError = (e as Error).message;
         tools.toastError(txError);

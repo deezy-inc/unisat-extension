@@ -8,7 +8,7 @@ import {
   sessionService
 } from '@/background/service';
 import i18n from '@/background/service/i18n';
-import { DisplayedKeyring, Keyring } from '@/background/service/keyring';
+import {DisplayedKeyring, Keyring} from '@/background/service/keyring';
 import {
   ADDRESS_TYPES,
   AddressFlagType,
@@ -35,18 +35,18 @@ import {
   UTXO,
   WalletKeyring
 } from '@/shared/types';
-import { checkAddressFlag } from '@/shared/utils';
-import { UnspentOutput, txHelpers } from '@unisat/wallet-sdk';
-import { publicKeyToAddress, scriptPkToAddress } from '@unisat/wallet-sdk/lib/address';
-import { ECPair, bitcoin } from '@unisat/wallet-sdk/lib/bitcoin-core';
-import { signMessageOfBIP322Simple } from '@unisat/wallet-sdk/lib/message';
-import { toPsbtNetwork } from '@unisat/wallet-sdk/lib/network';
-import { getAddressUtxoDust } from '@unisat/wallet-sdk/lib/transaction';
-import { toXOnly } from '@unisat/wallet-sdk/lib/utils';
+import {checkAddressFlag} from '@/shared/utils';
+import {txHelpers, UnspentOutput} from '@unisat/wallet-sdk';
+import {publicKeyToAddress, scriptPkToAddress} from '@unisat/wallet-sdk/lib/address';
+import {bitcoin, ECPair} from '@unisat/wallet-sdk/lib/bitcoin-core';
+import {signMessageOfBIP322Simple} from '@unisat/wallet-sdk/lib/message';
+import {toPsbtNetwork} from '@unisat/wallet-sdk/lib/network';
+import {getAddressUtxoDust} from '@unisat/wallet-sdk/lib/transaction';
+import {toXOnly} from '@unisat/wallet-sdk/lib/utils';
 
-import { ContactBookItem } from '../service/contactBook';
-import { OpenApiService } from '../service/openapi';
-import { ConnectedSite } from '../service/permission';
+import {ContactBookItem} from '../service/contactBook';
+import {OpenApiService} from '../service/openapi';
+import {ConnectedSite} from '../service/permission';
 import BaseController from './base';
 
 const stashKeyrings: Record<string, Keyring> = {};
@@ -468,6 +468,14 @@ export class WalletController extends BaseController {
       toSignInputs = await this.formatOptionsToSignInputs(psbt);
       if (autoFinalized !== false) autoFinalized = true;
     }
+    if (keyring.addressType === AddressType.RAW_P2TR) {
+      toSignInputs = toSignInputs.map((v) => {
+        return {
+          ...v,
+          rawTaprootPubkey: true
+        };
+      })
+    }
     psbt.data.inputs.forEach((v, index) => {
       const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness);
       const isP2TR = keyring.addressType === AddressType.P2TR || keyring.addressType === AddressType.M44_P2TR;
@@ -487,7 +495,7 @@ export class WalletController extends BaseController {
     psbt = await keyringService.signTransaction(_keyring, psbt, toSignInputs);
     if (autoFinalized) {
       toSignInputs.forEach((v) => {
-        // psbt.validateSignaturesOfInput(v.index, validator);
+        psbt.validateSignaturesOfInput(v.index, validator);
         psbt.finalizeInput(v.index);
       });
     }

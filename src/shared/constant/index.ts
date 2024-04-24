@@ -159,6 +159,14 @@ export const ADDRESS_TYPES: {
     hdPath: "m/44'/0'/0'/0",
     displayIndex: 5,
     isUnisatLegacy: true
+  },
+  {
+    value: AddressType.RAW_P2TR,
+    label: 'Nostr Recovery (RAW_P2TR)',
+    name: 'RAW_P2TR',
+    hdPath: '',
+    displayIndex: 6,
+    isUnisatLegacy: false
   }
 ];
 
@@ -174,7 +182,8 @@ export const RESTORE_WALLETS: { value: RestoreWalletType; name: string; addressT
       AddressType.P2TR,
       AddressType.P2PKH,
       AddressType.M44_P2WPKH,
-      AddressType.M44_P2TR
+      AddressType.M44_P2TR,
+      AddressType.RAW_P2TR
     ]
   },
   {
@@ -201,7 +210,8 @@ export const RESTORE_WALLETS: { value: RestoreWalletType; name: string; addressT
       AddressType.P2SH_P2WPKH,
       AddressType.P2TR,
       AddressType.M44_P2WPKH,
-      AddressType.M44_P2TR
+      AddressType.M44_P2TR,
+      AddressType.RAW_P2TR
     ]
   }
 ];
